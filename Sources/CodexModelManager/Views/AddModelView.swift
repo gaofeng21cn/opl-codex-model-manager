@@ -13,7 +13,7 @@ struct AddModelView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("新增自定义模型")
                         .font(.title3.weight(.semibold))
-                    Text("从现有模板继承 Codex 工具、推理和消息配置。")
+                    Text("从现有模型继承 Codex 工具、推理和消息配置。")
                         .foregroundStyle(.secondary)
                 }
                 Spacer()

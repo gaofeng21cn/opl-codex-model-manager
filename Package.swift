@@ -8,16 +8,27 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "CodexModelManager", targets: ["CodexModelManager"])
+        .executable(name: "CodexModelManager", targets: ["CodexModelManager"]),
+        .executable(name: "CodexModelSync", targets: ["CodexModelSync"])
     ],
     targets: [
+        .target(
+            name: "CodexModelCore",
+            path: "Sources/CodexModelCore"
+        ),
         .executableTarget(
             name: "CodexModelManager",
+            dependencies: ["CodexModelCore"],
             path: "Sources/CodexModelManager"
+        ),
+        .executableTarget(
+            name: "CodexModelSync",
+            dependencies: ["CodexModelCore"],
+            path: "Sources/CodexModelSync"
         ),
         .testTarget(
             name: "CodexModelManagerTests",
-            dependencies: ["CodexModelManager"],
+            dependencies: ["CodexModelManager", "CodexModelCore"],
             path: "Tests/CodexModelManagerTests"
         )
     ],

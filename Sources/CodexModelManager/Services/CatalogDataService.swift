@@ -1,3 +1,4 @@
+import CodexModelCore
 import Foundation
 
 struct CatalogDataService {
@@ -34,6 +35,7 @@ struct CatalogDataService {
         let updatedData = try CustomModelEditor.adding(
             draft: draft,
             to: sourceData,
+            catalogData: mergedData,
             existingSlugs: Set(models.map(\.slug))
         )
 

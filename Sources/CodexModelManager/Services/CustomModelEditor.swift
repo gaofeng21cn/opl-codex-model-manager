@@ -4,6 +4,7 @@ enum CustomModelEditor {
     static func adding(
         draft: NewModelDraft,
         to sourceData: Data,
+        catalogData: Data? = nil,
         existingSlugs: Set<String>
     ) throws -> Data {
         guard isValidSlug(draft.normalizedSlug) else {
@@ -23,8 +24,15 @@ enum CustomModelEditor {
 
         guard
             var root = try JSONSerialization.jsonObject(with: sourceData) as? [String: Any],
-            var models = root["models"] as? [[String: Any]],
-            var newModel = models.first(where: { $0["slug"] as? String == draft.templateSlug })
+            var models = root["models"] as? [[String: Any]]
+        else {
+            throw AppError.missingTemplate
+        }
+        let templateData = catalogData ?? sourceData
+        guard
+            let templateRoot = try JSONSerialization.jsonObject(with: templateData) as? [String: Any],
+            let templates = templateRoot["models"] as? [[String: Any]],
+            var newModel = templates.first(where: { $0["slug"] as? String == draft.templateSlug })
         else {
             throw AppError.missingTemplate
         }
@@ -38,6 +46,9 @@ enum CustomModelEditor {
         newModel["input_modalities"] = draft.supportsImage ? ["text", "image"] : ["text"]
         newModel["supports_image_detail_original"] =
             draft.supportsImage && draft.supportsOriginalImageDetail
+        if newModel["supports_reasoning_summaries"] == nil {
+            newModel["supports_reasoning_summaries"] = true
+        }
         newModel["priority"] = nextPriority
 
         models.append(newModel)

@@ -1,3 +1,4 @@
+@testable import CodexModelCore
 import Foundation
 import XCTest
 @testable import CodexModelManager
@@ -56,6 +57,7 @@ final class AppConfigurationTests: XCTestCase {
         let url = directory.appendingPathComponent("config.json")
         let object: [String: Any] = [
             "backupDirectoryPath": "~/.codex/backups/model-catalog",
+            "codexRuntimePath": "/usr/bin/true",
             "customSourcePath": customSourcePath,
             "errorLogPath": "/var/tmp/model-catalog-sync.error.log",
             "launchAgentLabel": "com.example.model-catalog-sync",

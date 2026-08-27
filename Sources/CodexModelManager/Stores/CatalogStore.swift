@@ -1,4 +1,5 @@
 import AppKit
+import CodexModelCore
 import Foundation
 
 @MainActor
@@ -7,10 +8,12 @@ final class CatalogStore: ObservableObject {
     @Published private(set) var isRefreshing = false
     @Published private(set) var isSyncing = false
     @Published private(set) var isAddingModel = false
+    @Published private(set) var isApplyingConfiguration = false
     @Published var errorMessage: String?
     @Published var isPresentingAddModel = false
 
     @Published private(set) var paths: CatalogPaths?
+    @Published private(set) var configuration: AppConfiguration?
     let configurationURL: URL
     private var service: CatalogDataService?
     private var configurationErrorMessage: String?
@@ -20,11 +23,14 @@ final class CatalogStore: ObservableObject {
     init(configurationURL: URL = AppConfiguration.defaultURL) {
         self.configurationURL = configurationURL
         do {
-            let paths = try AppConfiguration.load(from: configurationURL)
+            let configuration = try AppConfiguration.read(from: configurationURL)
+            let paths = try configuration.resolved()
+            self.configuration = configuration
             self.paths = paths
             self.service = CatalogDataService(paths: paths)
             self.configurationErrorMessage = nil
         } catch {
+            self.configuration = nil
             self.paths = nil
             self.service = nil
             self.configurationErrorMessage = error.localizedDescription
@@ -33,9 +39,40 @@ final class CatalogStore: ObservableObject {
 
     init(service: CatalogDataService, configurationURL: URL = AppConfiguration.defaultURL) {
         self.configurationURL = configurationURL
+        self.configuration = nil
         self.paths = service.paths
         self.service = service
         self.configurationErrorMessage = nil
+    }
+
+    func recommendedConfiguration() throws -> AppConfiguration {
+        try AppConfiguration.recommended()
+    }
+
+    func applyConfiguration(_ configuration: AppConfiguration) async -> Bool {
+        guard !isApplyingConfiguration else { return false }
+        isApplyingConfiguration = true
+        defer { isApplyingConfiguration = false }
+        do {
+            let configurationURL = configurationURL
+            let helperURL = Self.packagedHelperURL
+            let result = try await Task.detached(priority: .userInitiated) {
+                try SetupService().apply(
+                    configuration: configuration,
+                    configurationURL: configurationURL,
+                    helperURL: helperURL
+                )
+            }.value
+            self.configuration = configuration
+            self.paths = result.paths
+            self.service = CatalogDataService(paths: result.paths)
+            self.configurationErrorMessage = nil
+            await refresh()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
     }
 
     func refresh() async {
@@ -101,5 +138,12 @@ final class CatalogStore: ObservableObject {
 
     func reveal(_ url: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    private static var packagedHelperURL: URL {
+        Bundle.main.bundleURL
+            .appendingPathComponent("Contents", isDirectory: true)
+            .appendingPathComponent("Helpers", isDirectory: true)
+            .appendingPathComponent("CodexModelSync")
     }
 }

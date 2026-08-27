@@ -13,6 +13,29 @@ struct ContentView: View {
     }
 
     var body: some View {
+        Group {
+            if store.isConfigured {
+                configuredContent
+            } else {
+                SetupView(store: store)
+            }
+        }
+        .alert(
+            "操作未完成",
+            isPresented: Binding(
+                get: { store.errorMessage != nil },
+                set: { if !$0 { store.errorMessage = nil } }
+            )
+        ) {
+            Button("好", role: .cancel) {
+                store.errorMessage = nil
+            }
+        } message: {
+            Text(store.errorMessage ?? "")
+        }
+    }
+
+    private var configuredContent: some View {
         NavigationSplitView {
             SidebarView(
                 selection: selection,
@@ -54,6 +77,11 @@ struct ContentView: View {
                         }
                         .help("新增自定义模型")
                         .disabled(!store.isConfigured)
+
+                        SettingsLink {
+                            Image(systemName: "gearshape")
+                        }
+                        .help("设置")
                     }
                 }
         }
@@ -64,21 +92,8 @@ struct ContentView: View {
         .sheet(isPresented: $store.isPresentingAddModel) {
             AddModelView(
                 store: store,
-                templates: store.snapshot.customModels
+                templates: store.snapshot.models
             )
-        }
-        .alert(
-            "操作未完成",
-            isPresented: Binding(
-                get: { store.errorMessage != nil },
-                set: { if !$0 { store.errorMessage = nil } }
-            )
-        ) {
-            Button("好", role: .cancel) {
-                store.errorMessage = nil
-            }
-        } message: {
-            Text(store.errorMessage ?? "")
         }
     }
 

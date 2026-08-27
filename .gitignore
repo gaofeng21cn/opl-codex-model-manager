@@ -1,5 +1,6 @@
 .build/
 dist/
+*.notarization.json
 .DS_Store
 *.xcuserstate
 Config/local.json

@@ -41,5 +41,9 @@ struct CodexModelManagerApp: App {
                 .disabled(!store.isConfigured)
             }
         }
+
+        Settings {
+            SettingsView(store: store)
+        }
     }
 }

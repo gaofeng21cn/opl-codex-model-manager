@@ -87,4 +87,39 @@ final class CustomModelEditorTests: XCTestCase {
             XCTAssertTrue(error.localizedDescription.contains("slug"))
         }
     }
+
+    func testAddingCanCloneAnOfficialTemplateIntoAnEmptyCustomSource() throws {
+        let source = try JSONSerialization.data(withJSONObject: ["models": []])
+        let catalog = try JSONSerialization.data(withJSONObject: [
+            "models": [[
+                "slug": "gpt-official",
+                "display_name": "GPT Official",
+                "description": "Official template",
+                "context_window": 200_000,
+                "max_context_window": 800_000,
+                "input_modalities": ["text", "image"],
+                "supports_image_detail_original": true,
+                "priority": 1,
+                "wire_api": "responses"
+            ]]
+        ])
+        var draft = NewModelDraft()
+        draft.slug = "hosted-model"
+        draft.displayName = "Hosted Model"
+        draft.description = "Hosted model"
+        draft.templateSlug = "gpt-official"
+        draft.contextWindow = 128_000
+
+        let updated = try CustomModelEditor.adding(
+            draft: draft,
+            to: source,
+            catalogData: catalog,
+            existingSlugs: ["gpt-official"]
+        )
+        let root = try XCTUnwrap(JSONSerialization.jsonObject(with: updated) as? [String: Any])
+        let model = try XCTUnwrap((root["models"] as? [[String: Any]])?.first)
+        XCTAssertEqual(model["slug"] as? String, "hosted-model")
+        XCTAssertEqual(model["wire_api"] as? String, "responses")
+        XCTAssertEqual(model["priority"] as? Int, 1000)
+    }
 }
