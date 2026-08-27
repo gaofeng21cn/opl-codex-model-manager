@@ -18,11 +18,15 @@ for variable_name in SIGNING_IDENTITY APPLE_ID APPLE_ID_PASSWORD TEAM_ID; do
 done
 
 dist="$project_root/dist"
-app="$dist/CodexModelManager.app"
 dmg="$dist/Codex-Model-Manager.dmg"
 checksum="$dmg.sha256"
 staging="$(/usr/bin/mktemp -d /tmp/codex-model-manager-release.XXXXXX)"
+payload="$staging/payload"
+app="$payload/CodexModelManager.app"
+staged_dmg="$staging/Codex-Model-Manager.dmg"
 trap '/bin/rm -rf -- "$staging"' EXIT
+/bin/mkdir -p "$dist" "$payload"
+/bin/rm -rf "$dist/CodexModelManager.app"
 
 "$project_root/script/build_app.sh" \
     --configuration release \
@@ -53,17 +57,16 @@ test "$(/usr/bin/plutil -extract status raw -o - "$dist/app-notarization.json")"
 /usr/sbin/spctl --assess --type execute --verbose=4 "$app"
 /bin/rm -f "$staging/app.zip"
 
-/usr/bin/ditto "$app" "$staging/CodexModelManager.app"
-/bin/ln -s /Applications "$staging/Applications"
+/bin/ln -s /Applications "$payload/Applications"
 /bin/rm -f "$dmg" "$checksum"
 /usr/bin/hdiutil create \
     -volname "Codex Model Manager" \
-    -srcfolder "$staging" \
+    -srcfolder "$payload" \
     -ov \
     -format UDZO \
-    "$dmg"
-/usr/bin/codesign --force --timestamp --sign "$identity" "$dmg"
-/usr/bin/xcrun notarytool submit "$dmg" \
+    "$staged_dmg"
+/usr/bin/codesign --force --timestamp --sign "$identity" "$staged_dmg"
+/usr/bin/xcrun notarytool submit "$staged_dmg" \
     --apple-id "$APPLE_ID" \
     --password "$APPLE_ID_PASSWORD" \
     --team-id "$TEAM_ID" \
@@ -71,9 +74,10 @@ test "$(/usr/bin/plutil -extract status raw -o - "$dist/app-notarization.json")"
     --timeout 30m \
     --output-format json > "$dist/dmg-notarization.json"
 test "$(/usr/bin/plutil -extract status raw -o - "$dist/dmg-notarization.json")" = "Accepted"
-/usr/bin/xcrun stapler staple "$dmg"
-/usr/bin/xcrun stapler validate "$dmg"
-/usr/sbin/spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg"
+/usr/bin/xcrun stapler staple "$staged_dmg"
+/usr/bin/xcrun stapler validate "$staged_dmg"
+/usr/sbin/spctl --assess --type open --context context:primary-signature --verbose=4 "$staged_dmg"
+/usr/bin/ditto "$staged_dmg" "$dmg"
 
 (
     cd "$dist"
