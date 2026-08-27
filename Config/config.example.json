@@ -1,0 +1,9 @@
+{
+  "backupDirectoryPath": "~/.codex/backups/model-catalog",
+  "customSourcePath": "~/.codex/custom-models.json",
+  "errorLogPath": "~/.codex/log/model-catalog-sync.error.log",
+  "launchAgentLabel": "com.example.model-catalog-sync",
+  "launchAgentPlistPath": "~/Library/LaunchAgents/com.example.model-catalog-sync.plist",
+  "mergedCatalogPath": "~/.codex/models.json",
+  "syncLogPath": "~/.codex/log/model-catalog-sync.log"
+}
