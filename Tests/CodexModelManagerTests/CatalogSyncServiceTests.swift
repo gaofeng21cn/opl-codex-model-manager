@@ -15,6 +15,10 @@ final class CatalogSyncServiceTests: XCTestCase {
         if [ "$1" = "--version" ]; then
           echo "codex-test 1.0.0"
         else
+          if [ -z "$CODEX_HOME" ] || [ -e "$CODEX_HOME/config.toml" ]; then
+            echo "bundled catalog read inherited user configuration" >&2
+            exit 20
+          fi
           echo '\(bundled)'
         fi
         """
@@ -46,6 +50,8 @@ final class CatalogSyncServiceTests: XCTestCase {
         let models = try XCTUnwrap(root["models"] as? [[String: Any]])
         XCTAssertEqual(models.map { $0["slug"] as? String }, ["gpt-official", "vendor-model"])
         XCTAssertEqual(models[1]["priority"] as? Int, 5)
+        XCTAssertEqual(models[0]["supports_parallel_tool_calls"] as? Bool, true)
+        XCTAssertEqual(models[1]["supports_parallel_tool_calls"] as? Bool, true)
         XCTAssertEqual(
             try String(contentsOf: paths.syncLog, encoding: .utf8)
                 .split(separator: "\n").count,
