@@ -9,7 +9,7 @@ final class CatalogSyncServiceTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let runtime = directory.appendingPathComponent("codex")
-        let bundled = #"{"models":[{"slug":"gpt-official","display_name":"Official","description":"Official","priority":4,"context_window":200000,"max_context_window":800000,"input_modalities":["text"]}]}"#
+        let bundled = #"{"models":[{"slug":"gpt-official","display_name":"Official","description":"Official","visibility":"hide","priority":4,"context_window":200000,"max_context_window":800000,"input_modalities":["text"]}]}"#
         let script = """
         #!/bin/sh
         if [ "$1" = "--version" ]; then
@@ -52,6 +52,11 @@ final class CatalogSyncServiceTests: XCTestCase {
         XCTAssertEqual(models[1]["priority"] as? Int, 5)
         XCTAssertEqual(models[0]["supports_parallel_tool_calls"] as? Bool, true)
         XCTAssertEqual(models[1]["supports_parallel_tool_calls"] as? Bool, true)
+        XCTAssertEqual(models[0]["visibility"] as? String, "list")
+        XCTAssertEqual(models[0]["max_context_window"] as? Int, 800_000)
+        XCTAssertEqual(models[1]["visibility"] as? String, "hide")
+        let unchangedSource = try JSONSerialization.jsonObject(with: Data(contentsOf: custom)) as? NSDictionary
+        XCTAssertEqual(unchangedSource, customObject as NSDictionary)
         XCTAssertEqual(
             try String(contentsOf: paths.syncLog, encoding: .utf8)
                 .split(separator: "\n").count,
@@ -97,7 +102,8 @@ final class CatalogSyncServiceTests: XCTestCase {
             errorLog: directory.appendingPathComponent("sync.error.log"),
             launchAgentPlist: directory.appendingPathComponent("sync.plist"),
             launchAgentLabel: "com.example.test-sync",
-            backupDirectory: directory.appendingPathComponent("Backups", isDirectory: true)
+            backupDirectory: directory.appendingPathComponent("Backups", isDirectory: true),
+            visibilityOverrides: ["gpt-official": .list, "vendor-model": .hide, "future-model": .list]
         )
     }
 }

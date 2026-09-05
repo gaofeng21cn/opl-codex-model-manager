@@ -95,6 +95,9 @@ public struct CatalogSyncService: Sendable {
             if copy["supports_parallel_tool_calls"] == nil {
                 copy["supports_parallel_tool_calls"] = true
             }
+            if let slug = copy["slug"] as? String, let visibility = paths.visibilityOverrides[slug] {
+                copy["visibility"] = visibility.rawValue
+            }
             return copy
         }
         let prioritizedCustom = customModels.enumerated().map { index, model in
@@ -105,6 +108,9 @@ public struct CatalogSyncService: Sendable {
             }
             if copy["supports_parallel_tool_calls"] == nil {
                 copy["supports_parallel_tool_calls"] = true
+            }
+            if let slug = copy["slug"] as? String, let visibility = paths.visibilityOverrides[slug] {
+                copy["visibility"] = visibility.rawValue
             }
             return copy
         }
